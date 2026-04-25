@@ -3,28 +3,41 @@ const userValidator = require('../validation/user.validator');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-exports.signup = async (req, res) => {
+exports.signup = async (req, res,next) => {
     try {
-        const { error } = userValidator.register(req.body);
+        const { error } = userValidator.signup(req.body);
         if (error) return res.status(400).json({ message: error.details[0].message });
+
         const existingUser = await User.findOne({ email: req.body.email });
         if (existingUser) return res.status(400).json({ message: "משתמש עם המייל הזה כבר קיים" });
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
         const newUser = new User({
             ...req.body,
-            password: hashedPassword // החלפת הסיסמה הגלויה במוצפנת
+            password: hashedPassword
         });
+
         await newUser.save();
+        
         const userResponse = newUser.toObject();
-        delete userResponse.password; // הסרת הסיסמה מהתגובה
+        delete userResponse.password;
         res.status(201).json(userResponse);
-        } catch (err) {
-        res.status(500).json({ error: { message: "שגיאת שרת בעת ההרשמה" } });
+
+    } catch (err) {
+        console.error("--- Error in Signup ---");
+        console.error(err); 
+        
+        res.status(500).json({ 
+            error: { 
+                message: "שגיאת שרת בעת ההרשמה", 
+                details: err.message 
+            } 
+        });
     }
 };
-
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
         const { error } = userValidator.login(req.body);
         if (error) {
@@ -54,18 +67,18 @@ exports.login = async (req, res) => {
         });
 
     } catch (err) {
-        res.status(500).json({ error: { message: "שגיאת שרת בעת ההתחברות" } });
+        next(err);
     }
 };
-exports.getAllUsers = async (req, res) => {
+exports.getAllUsers = async (req, res, next) => {
     try {
         const users = await User.find().select('-password'); // הסרת שדה הסיסמה מהתוצאה
         res.status(200).json(users);
     } catch (err) {
-        res.status(500).json({ error: { message: "שגיאת שרת בעת שליפת המשתמשים" } });
+        next(err);
     }    
 };
-exports.deleteUser = async (req, res) => {
+exports.deleteUser = async (req, res,next) => {
     try {
         const userId = req.params.id;
         const deletedUser = await User.findByIdAndDelete(userId);
@@ -74,6 +87,6 @@ exports.deleteUser = async (req, res) => {
         }
         res.status(200).json({ message: "המשתמש נמחק בהצלחה" });
     } catch (err) {
-        res.status(500).json({ error: { message: "שגיאת שרת בעת מחיקת המשתמש" } });
+        next(err);
     }
 };

@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller'); 
+const auth = require('../middlewares/auth'); 
 
-router.post('/register', userController.signup);
+// נתיבים פתוחים לכולם
+router.post('/signup', userController.signup);
 router.post('/login', userController.login);
-router.get('/users', userController.getAllUsers); 
-router.delete('/users/:id', userController.deleteUser); 
+
+// נתיבים מוגנים
+router.get('/', auth, userController.getAllUsers); 
+router.delete('/:id', auth, userController.deleteUser); 
 
 module.exports = router;

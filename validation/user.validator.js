@@ -1,7 +1,8 @@
 const Joi = require('joi');
+const { signup } = require('../controllers/user.controller');
 
 const userValidator = {
-    register: (data) => {
+    signup: (data) => {
         const schema = Joi.object({
             username: Joi.string().min(2).required(),
             email: Joi.string().email().required(),

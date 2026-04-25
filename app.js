@@ -1,28 +1,36 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-
 const userRoute = require('./routes/user.route');
+const recipeRoute = require('./routes/recipe.route');
+const categoryRoute= require('./routes/category.route')
+const errorMiddleware = require('./middlewares/error.middleware');
+// 1. טעינת משתני הסביבה (חייב להיות לפני השימוש ב-process.env)
 dotenv.config();    
 const app = express();
 app.use(express.json());
+
+// 2. הגדרת הראוטים
 app.use('/api/users', userRoute);
+app.use('/api/recipes', recipeRoute);
+app.use('/api/categories',categoryRoute);
 
-// mongoose.connect(process.env.MONGO_URI)
-//     .then(() => console.log('Connected to MongoDB Atlas successfully'))
-//     .catch((err) => console.error('Error connecting to MongoDB Atlas:', err));
+// בתוך app.js, לפני ה-app.use של הראוטים:
+app.use((req, res, next) => {
+    console.log(`Request received: ${req.method} ${req.url}`);
+    next();
+});
 
-// const PORT = process.env.PORT || 3000;   
-// app.listen(PORT, () => {
-//     console.log(`Server is running on port ${PORT}`);
-// });
-    
-// בתוך app.js
-const uri = "mongodb+srv://SapirHuberi:JwjbR5F5QMm3cWX3@cluster0.mnmxdlr.mongodb.net/recipeDB?retryWrites=true&w=majority";
+app.use(errorMiddleware);
 
-mongoose.connect(uri)
+mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('Connected to MongoDB Atlas successfully'))
     .catch((err) => {
-        console.log("--- שגיאה בניסיון ישיר ---");
+        console.log("--- שגיאה בחיבור ---");
         console.error(err.message);
     });
+
+const PORT = process.env.PORT || 3000;   
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
